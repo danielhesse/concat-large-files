@@ -12,6 +12,7 @@ import debug from "debug";
 const log = debug("app:concat");
 
 import csvToJson from "csvtojson";
+import jsonToCsv from "json-to-csv-stream";
 
 // Obter o diretorio dos arquivos independente de onde estejam
 const { pathname: currentFile } = new URL(import.meta.url);
@@ -42,7 +43,7 @@ const handleStream = new Transform({
       country: data.Country,
     };
 
-    log(`id: ${output.id}`);
+    // log(`id: ${output.id}`);
     return cb(null, JSON.stringify(output));
 
     // Quando não chamamos o cbo, ele entende que não tem mais linhas pra ele
@@ -50,7 +51,13 @@ const handleStream = new Transform({
   },
 });
 
-await pipelineAsync(combinedStreams, csvToJson(), handleStream, finalStream);
+await pipelineAsync(
+  combinedStreams,
+  csvToJson(),
+  handleStream,
+  jsonToCsv(),
+  finalStream
+);
 
 log(`${files.length} files merged! on ${output}`);
 console.timeEnd("concat-data");
