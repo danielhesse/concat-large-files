@@ -13,6 +13,7 @@ const log = debug("app:concat");
 
 import csvToJson from "csvtojson";
 import jsonToCsv from "json-to-csv-stream";
+import StreamConcat from "stream-concat";
 
 // Obter o diretorio dos arquivos independente de onde estejam
 const { pathname: currentFile } = new URL(import.meta.url);
@@ -32,7 +33,11 @@ log(`processing ${files}`);
 // Com o unref, quando todos os outros processos async acabarem ele morre junto
 setInterval(() => process.stdout.write, 1000).unref();
 
-const combinedStreams = createReadStream(join(filesDir, files[0]));
+// Combinando arquivos e streams
+// const combinedStreams = createReadStream(join(filesDir, files[0]));
+const streams = files.map((item) => createReadStream(join(filesDir, item)));
+const combinedStreams = new StreamConcat(streams);
+
 const finalStream = createWriteStream(output);
 const handleStream = new Transform({
   transform: (chunk, encoding, cb) => {
@@ -43,7 +48,7 @@ const handleStream = new Transform({
       country: data.Country,
     };
 
-    // log(`id: ${output.id}`);
+    log(`id: ${output.id}`);
     return cb(null, JSON.stringify(output));
 
     // Quando não chamamos o cbo, ele entende que não tem mais linhas pra ele
